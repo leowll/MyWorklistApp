@@ -4,8 +4,10 @@ sap.ui.define([
 	"sap/ui/core/routing/History",
 	"mycompany/myapp/model/formatter",
 	"sap/ui/model/Filter",
-	"sap/ui/model/FilterOperator"
-], function(BaseController, JSONModel, History, formatter, Filter, FilterOperator) {
+	"sap/ui/model/FilterOperator",
+	"sap/m/MessageToast",
+	"sap/m/MessageBox"
+], function(BaseController, JSONModel, History, formatter, Filter, FilterOperator, MessageToast, MessageBox) {
 	"use strict";
 
 	return BaseController.extend("mycompany.myapp.controller.Worklist", {
@@ -236,7 +238,96 @@ sap.ui.define([
 			var oBinding = this._oTable.getBinding("items"),
 				sKey = oEvent.getParameter("selectedKey");
 			oBinding.filter(this._mFilters[sKey]);
+		},
+		/**
+		 * Displays an error message dialog. The displayed dialog is content density aware.
+		 * @param {String} sMsg The error message to be displayed
+		 * @private
+		 */
+		_showErrorMessage: function(sMsg) {
+			MessageBox.error(sMsg, {
+				styleClass: this.getOwnerComponent().getContentDensityClass()
+			});
+		},
+		/**
+		 * Error and success handler for the unlist action.
+		 * @param sProductId the product id for which this handler is called
+		 * @param bSuccess true in case of a success handler, else false (for error handler)
+		 * @param iRequestNumber the counter which specifies the position of this request
+		 * @param iTotalRequests the number of all requests sent
+		 * @param oData forwarded data object received from the remove/update OData API
+		 * @param oResponse forwarded response object received from the remove/update OData API
+		 * @private
+		 */
+		_handleUnlistActionResult: function(sProductId, bSuccess, iRequestNumber, iTotalRequests, oData, oResponse) {
+			// create a counter for successful and one for failed requests
+			// ...
+			// however, we just assume that every single request was successful and display a success message once
+			if (iRequestNumber === iTotalRequests) {
+				MessageToast.show(this.getModel("i18n").getResourceBundle().getText("StockRemovedSuccessMsg", [iTotalRequests]));
+			}
+		},
+		/**
+		 * Error and success handler for the reorder action.
+		 * @param sProductId the product id for which this handler is called
+		 * @param bSuccess true in case of a success handler, else false (for error handler)
+		 * @param iRequestNumber the counter which specifies the position of this request
+		 * @param iTotalRequests the number of all requests sent
+		 * @param oData forwarded data object received from the remove/update OData API
+		 * @param oResponse forwarded response object received from the remove/update OData API
+		 * @private
+		 */
+		_handleReorderActionResult: function(sProductId, bSuccess, iRequestNumber, iTotalRequests, oData, oResponse) {
+			// create a counter for successful and one for failed requests
+			// ...
+			// however, we just assume that every single request was successful and display a success message once
+			if (iRequestNumber === iTotalRequests) {
+				MessageToast.show(this.getModel("i18n").getResourceBundle().getText("StockUpdatedSuccessMsg", [iTotalRequests]));
+			}
+		},
+		/**
+		 * Event handler for the unlist button. Will delete the
+		 * product from the (local) model.
+		 * @public
+		 */
+		onUnlistObjects: function() {
+			var aSelectedProducts, i, sPath, oProduct, oProductId;
+			aSelectedProducts = this.byId("table").getSelectedItems();
+			if (aSelectedProducts.length) {
+				for (i = 0; i < aSelectedProducts.length; i++) {
+					oProduct = aSelectedProducts[i];
+					oProductId = oProduct.getBindingContext().getProperty("ProductID");
+					sPath = oProduct.getBindingContextPath();
+					this.getModel().remove(sPath, {
+						success: this._handleUnlistActionResult.bind(this, oProductId, true, i + 1, aSelectedProducts.length),
+						error: this._handleUnlistActionResult.bind(this, oProductId, false, i + 1, aSelectedProducts.length)
+					});
+				}
+			} else {
+				this._showErrorMessage(this.getModel("i18n").getResourceBundle().getText("TableSelectProduct"));
+			}
+		},
+		/**
+		 * Event handler for the order button. Will reorder the
+		 * product by updating the (local) model
+		 * @public
+		 */
+		onUpdateStockObjects: function() {
+			var aSelectedProducts, i, sPath, oProductObject;
+			aSelectedProducts = this.byId("table").getSelectedItems();
+			if (aSelectedProducts.length) {
+				for (i = 0; i < aSelectedProducts.length; i++) {
+					sPath = aSelectedProducts[i].getBindingContextPath();
+					oProductObject = aSelectedProducts[i].getBindingContext().getObject();
+					oProductObject.UnitsInStock += 10;
+					this.getModel().update(sPath, oProductObject, {
+						success: this._handleReorderActionResult.bind(this, oProductObject.ProductID, true, i + 1, aSelectedProducts.length),
+						error: this._handleReorderActionResult.bind(this, oProductObject.ProductID, false, i + 1, aSelectedProducts.length)
+					});
+				}
+			} else {
+				this._showErrorMessage(this.getModel("i18n").getResourceBundle().getText("TableSelectProduct"));
+			}
 		}
-
 	});
 });

@@ -17,7 +17,7 @@
 			<Table id="table" width="auto" class="sapUiResponsiveMargin sapUiNoMarginTop"
 				items="{ path: '/Products', sorter: { path: 'ProductName', descending: false }, parameters: { 'expand': 'Supplier' } }"
 				noDataText="{worklistView>/tableNoDataText}" busyIndicatorDelay="{worklistView>/tableBusyDelay}" growing="true" growingScrollToLoad="true"
-				updateFinished="onUpdateFinished">
+				updateFinished="onUpdateFinished" mode="MultiSelect">
 				<!--
 				<headerToolbar>
 					<Toolbar>
@@ -64,5 +64,11 @@
 		<semantic:saveAsTileAction>
 			<footerbar:AddBookmarkButton id="shareTile" title="{worklistView>/saveAsTileTitle}"/>
 		</semantic:saveAsTileAction>
+		<semantic:positiveAction>
+			<semantic:PositiveAction text="{i18n>TableProductsReorder}" press="onUpdateStockObjects"/>
+		</semantic:positiveAction>
+		<semantic:negativeAction>
+			<semantic:NegativeAction text="{i18n>TablePorductsUnlist}" press="onUnlistObjects"/>
+		</semantic:negativeAction>
 	</semantic:FullscreenPage>
 </mvc:View>
